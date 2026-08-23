@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import User from './models/User.js';
-import Chat from './models/Chat.js';
+import Conversation from './models/Conversation.js';
 import Message from './models/Message.js';
 import dotenv from 'dotenv';
 
@@ -13,7 +13,7 @@ const seed = async () => {
     console.log('Connected to MongoDB');
 
     await User.deleteMany({});
-    await Chat.deleteMany({});
+    await Conversation.deleteMany({});
     await Message.deleteMany({});
     console.log('Cleared existing data');
 
@@ -54,17 +54,17 @@ const seed = async () => {
 
     console.log('Created users:', users.map(u => u.email).join(', '));
 
-    const chat1 = await Chat.create({
+    const chat1 = await Conversation.create({
       type: 'private',
       participants: [users[0]._id, users[1]._id],
     });
 
-    const chat2 = await Chat.create({
+    const chat2 = await Conversation.create({
       type: 'private',
       participants: [users[0]._id, users[2]._id],
     });
 
-    const chat3 = await Chat.create({
+    await Conversation.create({
       type: 'group',
       name: 'Family Group',
       description: 'Family chat group',

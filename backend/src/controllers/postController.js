@@ -1,5 +1,5 @@
 import Post from '../models/Post.js';
-import Chat from '../models/Chat.js';
+import Conversation from '../models/Conversation.js';
 import { getIO } from '../socket/emitter.js';
 
 export const createPost = async (req, res) => {
@@ -22,7 +22,7 @@ export const createPost = async (req, res) => {
 
     const io = getIO();
     if (io) {
-      const chats = await Chat.find({ participants: req.user._id });
+      const chats = await Conversation.find({ participants: req.user._id });
       const notified = new Set();
       for (const chat of chats) {
         for (const pid of chat.participants) {

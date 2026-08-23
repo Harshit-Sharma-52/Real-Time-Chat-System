@@ -3,8 +3,22 @@ import mongoose from 'mongoose';
 const messageSchema = new mongoose.Schema({
   chatId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Chat',
+    ref: 'Conversation',
     required: true
+  },
+  workspaceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Workspace'
+  },
+  threadId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+    default: null
+  },
+  kind: {
+    type: String,
+    enum: ['message', 'task', 'decision', 'system'],
+    default: 'message'
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
@@ -52,11 +66,29 @@ const messageSchema = new mongoose.Schema({
       type: String,
       required: true
     }
-  }]
+  }],
+  pinned: {
+    type: Boolean,
+    default: false
+  },
+  edited: {
+    type: Boolean,
+    default: false
+  },
+  editedAt: {
+    type: Date,
+    default: null
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  }
 }, {
   timestamps: true
 });
 
 messageSchema.index({ chatId: 1, createdAt: -1 });
+messageSchema.index({ workspaceId: 1, createdAt: -1 });
+messageSchema.index({ threadId: 1, createdAt: 1 });
 
 export default mongoose.model('Message', messageSchema);

@@ -19,7 +19,7 @@ export const auth = async (req, res, next) => {
     let decoded;
     try {
       decoded = jwt.verify(token, config.jwtSecret);
-    } catch (err) {
+    } catch {
       return res.status(401).json({ error: 'Invalid token' });
     }
     
@@ -32,7 +32,7 @@ export const auth = async (req, res, next) => {
     req.user = user;
     req.token = token;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ error: 'Authentication failed' });
   }
 };

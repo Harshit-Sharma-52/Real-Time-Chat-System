@@ -10,14 +10,18 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 
-import config from './config/index.js';
+import config, { validateConfig } from './config/index.js';
 import connectDB from './config/database.js';
+import errorHandler from './middleware/errorHandler.js';
 import authRoutes from './routes/auth.js';
 import chatRoutes from './routes/chats.js';
 import messageRoutes from './routes/messages.js';
 import uploadRoutes from './routes/upload.js';
 import postRoutes from './routes/posts.js';
 import noteRoutes from './routes/notes.js';
+import workspaceRoutes from './routes/workspaces.js';
+import notificationRoutes from './routes/notifications.js';
+import aiRoutes from './routes/ai.js';
 import { initializeSocket } from './socket/socketHandler.js';
 import { setIO } from './socket/emitter.js';
 
@@ -52,7 +56,7 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 1000,
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -61,13 +65,22 @@ app.use('/api', limiter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 60,
   message: { error: 'Too many login attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+
+const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  message: { error: 'Too many AI requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/ai', aiLimiter);
 
 const uploadsDir = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsDir));
@@ -82,13 +95,11 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 
-app.use((err, req, res, next) => {
-  console.error(`${new Date().toISOString()} - Error:`, err);
-  res.status(err.status || 500).json({
-    error: config.nodeEnv === 'production' ? 'Internal server error' : err.message
-  });
-});
+app.use(errorHandler);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
@@ -101,6 +112,8 @@ const PORT = config.port;
 
 const startServer = async () => {
   try {
+    validateConfig();
+
     console.log('Connecting to MongoDB...');
     await connectDB();
     console.log('MongoDB connected successfully');

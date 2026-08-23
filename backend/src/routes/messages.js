@@ -7,7 +7,10 @@ import {
   markChatAsRead,
   addReaction,
   removeReaction,
-  searchMessages
+  searchMessages,
+  editMessage,
+  deleteMessage,
+  togglePin,
 } from '../controllers/messageController.js';
 
 const router = express.Router();
@@ -15,6 +18,9 @@ const router = express.Router();
 router.post('/', auth, sendMessage);
 router.get('/chat/:chatId', auth, getMessages);
 router.put('/:messageId/read', auth, markAsRead);
+router.put('/:messageId', auth, editMessage);
+router.delete('/:messageId', auth, deleteMessage);
+router.put('/:messageId/pin', auth, togglePin);
 router.put('/chat/:chatId/read', auth, markChatAsRead);
 router.post('/reaction', auth, addReaction);
 router.delete('/:messageId/reaction', auth, removeReaction);

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
 import User from '../models/User.js';
-import Chat from '../models/Chat.js';
+import Conversation from '../models/Conversation.js';
 import Message from '../models/Message.js';
 
 const onlineUsers = new Map();
@@ -23,9 +23,9 @@ export const initializeSocket = (io) => {
       socket.userId = user._id.toString();
       socket.userName = user.name;
       next();
-    } catch (error) {
-      next(new Error('Invalid token'));
-    }
+  } catch {
+    next(new Error('Invalid token'));
+  }
   });
 
   io.on('connection', async (socket) => {
@@ -71,9 +71,9 @@ export const initializeSocket = (io) => {
 
     socket.on('sendMessage', async (data) => {
       try {
-        const { chatId, content, messageType, fileUrl, fileName } = data;
+        const { chatId, content, messageType, fileUrl, fileName, threadId } = data;
 
-        const chat = await Chat.findById(chatId);
+        const chat = await Conversation.findById(chatId);
         if (!chat) {
           console.error('Chat not found:', chatId);
           return;
@@ -93,7 +93,10 @@ export const initializeSocket = (io) => {
           content,
           messageType: messageType || 'text',
           fileUrl,
-          fileName
+          fileName,
+          threadId: threadId || null,
+          workspaceId: chat.workspaceId || null,
+          kind: 'message'
         });
 
         await message.save();
@@ -158,6 +161,9 @@ export const initializeSocket = (io) => {
         const message = await Message.findById(messageId);
         if (!message) return;
 
+        const chat = await Conversation.findOne({ _id: message.chatId, participants: userId });
+        if (!chat) return;
+
         const existingReaction = message.reactions.find(
           r => r.user.toString() === userId
         );
@@ -185,6 +191,9 @@ export const initializeSocket = (io) => {
       try {
         const message = await Message.findById(messageId);
         if (!message) return;
+
+        const chat = await Conversation.findOne({ _id: message.chatId, participants: userId });
+        if (!chat) return;
 
         message.reactions = message.reactions.filter(
           r => r.user.toString() !== userId
